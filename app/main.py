@@ -53,8 +53,8 @@ def honeypot(payload: dict, x_api_key: str = Header(None)):
         add_message(session_id, "agent", agent_reply)
 
         # Extract intelligence after 4+ messages
-        if get_message_count(session_id) >= 4:
-            extracted_intelligence = extract_intelligence(history)
+        #if get_message_count(session_id) >= 4:
+        extracted_intelligence = extract_intelligence(history)
 
     return {
         "status": "success",
