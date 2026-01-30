@@ -26,3 +26,5 @@ def get_messages(session_id: str):
 
 def get_message_count(session_id: str):
     return len(get_session(session_id)["messages"])
+
+#LGTM
