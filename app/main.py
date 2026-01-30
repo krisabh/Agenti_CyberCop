@@ -42,9 +42,15 @@ def honeypot(payload: dict, x_api_key: str = Header(None)):
 
     if detection["scamDetected"]:
         history = get_messages(session_id)
-        agent_reply = generate_agent_reply(history, message)
+        # agent_reply = generate_agent_reply(history, message)
+        agent_reply = generate_agent_reply(history)
 
-        add_message(session_id, "user", agent_reply)
+        #to check conversation history in server log
+        print("=== CONVERSATION HISTORY ===")
+        print(history)
+        print("============================")
+        # add_message(session_id, "user", agent_reply)
+        add_message(session_id, "agent", agent_reply)
 
         # Extract intelligence after 4+ messages
         if get_message_count(session_id) >= 4:
@@ -56,5 +62,6 @@ def honeypot(payload: dict, x_api_key: str = Header(None)):
         "reason": detection["reason"],
         "agentReply": agent_reply,
         "totalMessages": get_message_count(session_id),
-        "extractedIntelligence": extracted_intelligence
+        "extractedIntelligence": extracted_intelligence,
+        "conversation history": [history]
     }
