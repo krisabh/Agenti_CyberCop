@@ -38,10 +38,13 @@ Reply as the user.
             ],
         )
     ]
-
-    response = client.models.generate_content(
-        model="gemini-3-flash-preview",
-        contents=contents
-    )
+    try:
+        response = client.models.generate_content(
+                model="gemini-3-flash-preview",
+                contents=contents
+            )
+    except Exception as e:
+        print("Gemini error:", e)
+        return "Please give me a moment, I am checking this."
 
     return response.text.strip()

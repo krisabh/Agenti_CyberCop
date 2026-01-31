@@ -4,7 +4,7 @@ from datetime import datetime
 
 # In-memory session store
 _sessions = {}
-
+finalized_sessions = set()
 def get_session(session_id: str):
     if session_id not in _sessions:
         _sessions[session_id] = {
@@ -26,5 +26,13 @@ def get_messages(session_id: str):
 
 def get_message_count(session_id: str):
     return len(get_session(session_id)["messages"])
+
+def is_session_finalized(session_id: str) -> bool:
+    return session_id in finalized_sessions
+
+
+def mark_session_finalized(session_id: str):
+    finalized_sessions.add(session_id)
+
 
 #LGTM
