@@ -13,7 +13,8 @@ You respond like a real human.
 Keep responses short.
 """
 
-def generate_agent_reply(history, new_message):
+# def generate_agent_reply(history, new_message):
+def generate_agent_reply(history):    
     client = get_client()
 
     conversation = ""
@@ -31,19 +32,19 @@ def generate_agent_reply(history, new_message):
 Conversation so far:
 {conversation}
 
-Scammer says:
-{new_message}
-
 Reply as the user.
 """
                 )
             ],
         )
     ]
-
-    response = client.models.generate_content(
-        model="gemini-3-pro-preview",
-        contents=contents
-    )
+    try:
+        response = client.models.generate_content(
+                model="gemini-3-flash-preview",
+                contents=contents
+            )
+    except Exception as e:
+        print("Gemini error:", e)
+        return "Please give me a moment, I am checking this."
 
     return response.text.strip()
