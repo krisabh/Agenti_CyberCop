@@ -33,7 +33,7 @@ def honeypot(payload: Optional[dict] = Body(None), x_api_key: str = Header(None)
         raise HTTPException(status_code=401, detail="Invalid API key")
 
     # ✅ GUVI endpoint tester case (no body)
-    if payload is None:
+    if  not payload or payload == {}:
         return {
             "status": "success",
             "message": "Honeypot endpoint reachable"
