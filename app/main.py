@@ -18,7 +18,7 @@ from app.memory import is_session_finalized, mark_session_finalized
 load_dotenv()
 
 API_KEY = os.getenv("API_KEY")
-
+#GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 app = FastAPI()
 
 @app.get("/")
