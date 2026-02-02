@@ -116,7 +116,7 @@ def honeypot(payload: Optional[dict] = Body(None), x_api_key: str = Header(None)
     return {
         "status": "success",
         "scamDetected": detection["scamDetected"],
-        "reason": detection["reason"],
+        # "reason": detection["reason"],
         "agentReply": agent_reply,
         "totalMessages": get_message_count(session_id),
         #"extractedIntelligence": extracted_intelligence,
