@@ -22,10 +22,10 @@ def build_final_api_response(
         engagement_duration = int(
             (max(timestamps) - min(timestamps)).total_seconds()
         )
-        total_messages = len(conversation_history) + 1
+        total_messages = len(conversation_history)
     else:
         engagement_duration = 0
-        total_messages = 1
+        total_messages = 0
 
     # --- Final Response ---
     return {
@@ -38,7 +38,10 @@ def build_final_api_response(
         "extractedIntelligence": {
             "bankAccounts": extracted_intelligence.get("bankAccounts", []),
             "upiIds": extracted_intelligence.get("upiIds", []),
-            "phishingLinks": extracted_intelligence.get("phishingLinks", [])
+            "phishingLinks": extracted_intelligence.get("phishingLinks", []),
+            "phoneNumbers": extracted_intelligence.get("phoneNumbers", [])
+            # "suspiciousKeywords": extracted_intelligence.get("suspiciousKeywords", [])
         },
         "agentNotes": agent_notes
     }
+
