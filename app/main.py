@@ -188,7 +188,7 @@ def honeypot(payload: Optional[dict] = Body(None), x_api_key: str = Header(None)
         return {
             "status": "success",
             "reply": (
-                "I am working on it. Please wait...!"
+                "I am working on it. "
             ),
         }
 
@@ -232,7 +232,7 @@ def honeypot(payload: Optional[dict] = Body(None), x_api_key: str = Header(None)
         engagement_complete = (
         scam_detected is True
         and extracted_intelligence is not None
-        and get_message_count(session_id) >=10
+        and get_message_count(session_id) >=25
         and any(
             value
             for key, value in extracted_intelligence.items()
@@ -256,7 +256,7 @@ def honeypot(payload: Optional[dict] = Body(None), x_api_key: str = Header(None)
             return {
                 "status": "success",
                 "reply": (
-                    "I am working on it."
+                    "I am working on it. Please wait...!"
                 ),
             }
         # ================================
