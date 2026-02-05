@@ -242,7 +242,7 @@ def honeypot(payload: Optional[dict] = Body(None), x_api_key: str = Header(None)
 
         if engagement_complete and not is_session_finalized(session_id):
             agent_notes = generate_agent_notes(history)
-            total_messages = get_message_count(session_id) - 1
+            total_messages = get_message_count(session_id)
             # Mandatory GUVI callback
             send_final_result_to_guvi(
                 session_id=session_id,

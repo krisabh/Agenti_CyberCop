@@ -76,13 +76,13 @@ def extract_intelligence(messages):
      text = " ".join([m["text"] for m in messages])
      lowered = text.lower()
      upi_matches = re.findall(r"\b[\w.-]+@[\w.-]+\b", text)
-     phone_numbers = re.findall(r"\b(?:\+91)?\d{10}\b", text)
+     phone_numbers = re.findall(r"(?:\+91|91|0)?[-\s.]?[6-9]\d{9}(?!\d)", text)
      urls = re.findall(r"https?://[^\s]+", text)
      email_pattern = re.compile(
         r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com\b"
      )
      emails = email_pattern.findall(text)
-    #  ifsc_codes = re.findall(r"\b[A-Z]{4}0[A-Z0-9]{6}\b", text)
+     ifsc_codes = re.findall(r"\b[A-Z]{4}0[A-Z0-9]{6}\b", text)
      pan_numbers = re.findall(r"\b[A-Z]{5}\d{4}[A-Z]\b", text)
      labeled_accounts = re.findall(
         r"\b(?:account(?: number)?|acct|acc(?:ount)?|a/c)\s*[:\-]?\s*(\d{6,18})\b",
@@ -104,7 +104,7 @@ def extract_intelligence(messages):
         "phoneNumbers": list(set(phone_numbers)),
         "phishingLinks": list(set(urls)),
         "emailAddresses": sorted(set(emails)),
-        # "ifscCodes": sorted(set(ifsc_codes)),
+        "ifscCodes": sorted(set(ifsc_codes)),
         "panNumbers": sorted(set(pan_numbers)),
         "suspiciousKeywords": suspicious_keywords
      }
