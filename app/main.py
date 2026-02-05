@@ -262,10 +262,10 @@ def honeypot(payload: Optional[dict] = Body(None), x_api_key: str = Header(None)
     # 5 Default (ongoing conversation response)
     return {
         "status": "success",
-        #"scamDetected": scam_detected,
-        # "reason": detection["reason"],
-        "reply": agent_reply,
-        #"totalMessages": get_message_count(session_id),
+        "scamDetected": scam_detected,
+        "reason": detection["reason"],
+        "agentReply": agent_reply,
+        "totalMessages": get_message_count(session_id),
         #"extractedIntelligence": extracted_intelligence,
-        #"conversationHistory": history if scam_detected else []
+        "conversationHistory": history if scam_detected else []
     }
