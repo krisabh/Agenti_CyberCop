@@ -68,7 +68,10 @@ SUSPICIOUS_KEYWORDS = {
      "kyc",
      "payment",
      "qr code",
-     "download"
+     "download",
+     "otp",
+     "transaction",
+     "transfer"
  }
  
  
