@@ -134,7 +134,7 @@ from app.agent_notes import generate_agent_notes
 import os
 from typing import Optional
 from fastapi import Body
-from app.memory import add_message, get_messages
+from app.memory import add_message, get_messages,get_message_count
 from app.memory import was_scam_detected, mark_scam_detected
 from app.detector import detect_scam
 from app.agent import generate_agent_reply
@@ -242,7 +242,7 @@ def honeypot(payload: Optional[dict] = Body(None), x_api_key: str = Header(None)
 
         if engagement_complete and not is_session_finalized(session_id):
             agent_notes = generate_agent_notes(history)
-            total_messages = max(len(history) - 1, 0)
+            total_messages = get_message_count(session_id)
             # Mandatory GUVI callback
             send_final_result_to_guvi(
                 session_id=session_id,
