@@ -129,12 +129,11 @@
 
 from fastapi import FastAPI, Header, HTTPException
 from dotenv import load_dotenv
-from app.final_response import build_final_api_response
 from app.agent_notes import generate_agent_notes
 import os
 from typing import Optional
 from fastapi import Body
-from app.memory import add_message, get_messages, get_message_count
+from app.memory import add_message, get_messages
 from app.memory import was_scam_detected, mark_scam_detected
 from app.detector import detect_scam
 from app.agent import generate_agent_reply
@@ -187,8 +186,10 @@ def honeypot(payload: Optional[dict] = Body(None), x_api_key: str = Header(None)
         # Conversation lifecycle is over
         return {
             "status": "success",
-            "scamDetected": True,
-            "message": "We extracted all the details from scammer and notified you. No further action required."
+            "reply": (
+                "Agent extracted all the intelligence & suspicious keyword "
+                "and send back the payload to GUVI callback endpoint"
+            ),
         }
 
     # 1 Store scammer message
@@ -240,32 +241,28 @@ def honeypot(payload: Optional[dict] = Body(None), x_api_key: str = Header(None)
 
         if engagement_complete and not is_session_finalized(session_id):
             agent_notes = generate_agent_notes(history)
-            final_response = build_final_api_response(
-                scam_detected=True,
-                conversation_history=history,
-                extracted_intelligence=extracted_intelligence,
-                agent_notes=agent_notes
-            )
+            total_messages = max(len(history) - 1, 0)
             # Mandatory GUVI callback
             send_final_result_to_guvi(
                 session_id=session_id,
                 scam_detected=True,
-                total_messages=final_response["engagementMetrics"]["totalMessagesExchanged"],
+                total_messages=total_messages,
                 extracted_intelligence=extracted_intelligence,
                 agent_notes=agent_notes
             )
             # Mark session as finalized
             mark_session_finalized(session_id)
-            return final_response
+            return {
+                "status": "success",
+                "reply": (
+                    "Agent extracted all the intelligence & suspicious keyword "
+                    "and send back the payload to GUVI callback endpoint"
+                ),
+            }
         # ================================
 
     # 5 Default (ongoing conversation response)
     return {
         "status": "success",
-        "scamDetected": scam_detected,
-        "reason": detection["reason"],
-        "agentReply": agent_reply,
-        "totalMessages": get_message_count(session_id),
-        #"extractedIntelligence": extracted_intelligence,
-        "conversationHistory": history if scam_detected else []
+        "reply": agent_reply or "",
     }
