@@ -71,7 +71,7 @@ Return only the single-sentence summary.
             return fallback_notes
         if tactics:
             print(f"Tactics used by scammer {tactic_phrase}")
-            return f"tactics observed:{tactic_phrase}"+'. '+summary
+            return summary +'. '+f"tactics observed:{tactic_phrase}"
         return summary
     except Exception:
         return fallback_notes
