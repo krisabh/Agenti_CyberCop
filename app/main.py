@@ -232,7 +232,7 @@ def honeypot(payload: Optional[dict] = Body(None), x_api_key: str = Header(None)
         engagement_complete = (
         scam_detected is True
         and extracted_intelligence is not None
-        and get_message_count(session_id) >=25
+        and get_message_count(session_id) >=17
         and any(
             value
             for key, value in extracted_intelligence.items()
