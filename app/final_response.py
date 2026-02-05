@@ -30,21 +30,22 @@ def build_final_api_response(
     # --- Final Response ---
     return {
         "status": "success",
-        "scamDetected": scam_detected,
-        "engagementMetrics": {
-            "engagementDurationSeconds": engagement_duration,
-            "totalMessagesExchanged": total_messages
-        },
-        "extractedIntelligence": {
-            "bankAccounts": extracted_intelligence.get("bankAccounts", []),
-            "upiIds": extracted_intelligence.get("upiIds", []),
-            "phishingLinks": extracted_intelligence.get("phishingLinks", []),
-            "phoneNumbers": extracted_intelligence.get("phoneNumbers", []),
-            "emailAddresses": extracted_intelligence.get("emailAddresses", []),
-            # "ifscCodes": extracted_intelligence.get("ifscCodes", []),
-            "panNumbers": extracted_intelligence.get("panNumbers", [])
-            # "suspiciousKeywords": extracted_intelligence.get("suspiciousKeywords", [])
-        },
-        "agentNotes": agent_notes
+        "reply": "Agent extracted all the intelligence & suspicious keyword and send back the payload to GUVI callback endpoint"
+        # "scamDetected": scam_detected,
+        # "engagementMetrics": {
+        #     "engagementDurationSeconds": engagement_duration,
+        #     "totalMessagesExchanged": total_messages
+        # },
+        # "extractedIntelligence": {
+        #     "bankAccounts": extracted_intelligence.get("bankAccounts", []),
+        #     "upiIds": extracted_intelligence.get("upiIds", []),
+        #     "phishingLinks": extracted_intelligence.get("phishingLinks", []),
+        #     "phoneNumbers": extracted_intelligence.get("phoneNumbers", []),
+        #     "emailAddresses": extracted_intelligence.get("emailAddresses", []),
+        #     # "ifscCodes": extracted_intelligence.get("ifscCodes", []),
+        #     "panNumbers": extracted_intelligence.get("panNumbers", [])
+        #     # "suspiciousKeywords": extracted_intelligence.get("suspiciousKeywords", [])
+        # },
+        # "agentNotes": agent_notes
     }
 
