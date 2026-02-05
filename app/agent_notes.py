@@ -25,7 +25,7 @@ def _extract_tactics(history: list) -> list[str]:
         tactics.append("payment redirection")
     if any(term in scammer_text for term in ["otp", "password", "pin", "cvv", "card"]):
         tactics.append("credential harvesting")
-    if any(term in scammer_text for term in ["link", "http", "https", "c"]):
+    if any(term in scammer_text for term in ["link", "http", "https", "verify"]):
         tactics.append("phishing")
 
     return list(dict.fromkeys(tactics))
