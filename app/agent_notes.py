@@ -65,13 +65,13 @@ Return only the single-sentence summary.
         model = get_model()
         response = model.generate_content(prompt)
         summary = response.text.strip().replace("\n", " ")
-        tactic_phrase = " and ".join(tactics)
+        tactic_phrase = " , ".join(tactics)
         if not summary:
             print("Agent Summary is empty")
             return fallback_notes
         if tactics:
             print(f"Tactics used by scammer {tactic_phrase}")
-            return summary +'. '+f"tactics observed:{tactic_phrase}"
+            return summary +' '+f"Tactics observed:{tactic_phrase}"
         return summary
     except Exception:
         return fallback_notes
