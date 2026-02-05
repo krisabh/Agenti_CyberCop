@@ -188,8 +188,7 @@ def honeypot(payload: Optional[dict] = Body(None), x_api_key: str = Header(None)
         return {
             "status": "success",
             "reply": (
-                "Agent extracted all the intelligence & suspicious keyword "
-                "and send back the payload to GUVI callback endpoint"
+                "I am working on it. Please wait...!"
             ),
         }
 
@@ -233,6 +232,7 @@ def honeypot(payload: Optional[dict] = Body(None), x_api_key: str = Header(None)
         engagement_complete = (
         scam_detected is True
         and extracted_intelligence is not None
+        and get_message_count(session_id) >=10
         and any(
             value
             for key, value in extracted_intelligence.items()
@@ -256,8 +256,7 @@ def honeypot(payload: Optional[dict] = Body(None), x_api_key: str = Header(None)
             return {
                 "status": "success",
                 "reply": (
-                    "Agent extracted all the intelligence & suspicious keyword "
-                    "and send back the payload to GUVI callback endpoint"
+                    "I am working on it."
                 ),
             }
         # ================================
