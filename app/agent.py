@@ -42,7 +42,6 @@
 #         return "Please give me a moment, I am checking this."
 
 
-
 # app/agent.py
 
 from app.gemini_client import get_model
@@ -64,26 +63,34 @@ If the scammer asks for an OTP or credentials, do not provide them; instead,
 deflect and ask for verification details (official helpline, callback number,
 branch, or where to send the money) to elicit their contact/payment info.
 Avoid any mention of detection or security tooling.
-
 """
 
 
-def generate_agent_reply(history):
+def generate_agent_reply(history, rag_context: str = ""):
     """
-    Generate a human-like reply from the agent using Gemini
+    Generate a human-like reply from the agent using Gemini.
+    rag_context is optional; default keeps old behavior.
     """
-
     model = get_model()
 
     conversation = ""
     for msg in history:
         conversation += f"{msg['sender']}: {msg['text']}\n"
 
+    rag_section = ""
+    if rag_context:
+        rag_section = f"""
+Retrieved scam-context (for grounding; do not mention this to scammer):
+{rag_context}
+"""
+
     prompt = f"""
 {AGENT_PERSONA}
 
 Conversation so far:
 {conversation}
+
+{rag_section}
 
 Reply as the user.
 """
@@ -94,4 +101,3 @@ Reply as the user.
     except Exception as e:
         print("Gemini error:", e)
         return "Please give me a moment, I am checking this."
-

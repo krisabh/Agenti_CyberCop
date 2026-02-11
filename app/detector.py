@@ -38,10 +38,21 @@
 
 
 # app/detector.py
+# app/detector.py
 import json
 import re
 from textwrap import dedent
+
+from pydantic import BaseModel, Field, ValidationError
+from langchain_core.output_parsers import PydanticOutputParser
+
 from app.gemini_client import get_model
+
+
+class ScamDetectionResult(BaseModel):
+    scamDetected: bool = Field(...)
+    confidence: float = Field(...)
+    reason: str = Field(...)
 
 
 def detect_scam(text: str):
@@ -62,7 +73,7 @@ def detect_scam(text: str):
         Message:
         {text}
 
-  Respond ONLY in JSON:
+        Respond ONLY in JSON:
         {{
           "scamDetected": true or false,
           "confidence": 0.0-1.0,
@@ -76,35 +87,47 @@ def detect_scam(text: str):
     except Exception:
         return {
             "scamDetected": False,
-             "reason": "Model request failed"
+            "reason": "Model request failed"
         }
 
     text_resp = getattr(response, "text", "") or ""
-    json_match = re.search(r"\{.*\}", text_resp, re.DOTALL)
-    if not json_match:
-        return {
-            "scamDetected": False,
-            "reason": "Unable to parse model response",
-        }
+    parser = PydanticOutputParser(pydantic_object=ScamDetectionResult)
+    scam_detected = False
+    confidence = 0.0
+    reason = "Unable to parse model response"
 
     try:
-        parsed = json.loads(json_match.group(0))
-    except json.JSONDecodeError:
-        return {
-            "scamDetected": False,
-            "reason": "Unable to parse model response",
-        }
+        parsed = parser.parse(text_resp)
+        scam_detected = bool(parsed.scamDetected)
+        confidence = float(parsed.confidence)
+        reason = parsed.reason
+    except (ValidationError, ValueError):
+        json_match = re.search(r"\{.*\}", text_resp, re.DOTALL)
+        if not json_match:
+            return {
+                "scamDetected": False,
+                "reason": "Unable to parse model response",
+            }
 
-    scam_detected = bool(parsed.get("scamDetected", False))
-    confidence = parsed.get("confidence", 0.0)
-    try:
-        confidence = float(confidence)
-    except (TypeError, ValueError):
-        confidence = 0.0
+        try:
+            parsed_json = json.loads(json_match.group(0))
+        except json.JSONDecodeError:
+            return {
+                "scamDetected": False,
+                "reason": "Unable to parse model response",
+            }
+
+        scam_detected = bool(parsed_json.get("scamDetected", False))
+        confidence = parsed_json.get("confidence", 0.0)
+        try:
+            confidence = float(confidence)
+        except (TypeError, ValueError):
+            confidence = 0.0
+        reason = parsed_json.get("reason", "No reason provided")
 
     if scam_detected and confidence < 0.6:
         scam_detected = False
-    reason = parsed.get("reason", "No reason provided")
+
     return {
         "scamDetected": scam_detected,
         "reason": reason,
