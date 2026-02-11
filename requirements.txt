@@ -4,3 +4,11 @@ google-generativeai
 python-dotenv
 requests
 gunicorn
+langchain
+langchain-community
+langchain-core
+langchain-google-genai
+langchain-chroma
+langchain-text-splitters
+chromadb
+pydantic
