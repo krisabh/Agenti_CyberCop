@@ -28,6 +28,7 @@ RAG_EMBEDDING_MODEL = os.getenv("RAG_EMBEDDING_MODEL", "models/embedding-001")
 RAG_EMBEDDING_MODELS = parse_embedding_candidates()
 CHUNK_SIZE = int(os.getenv("RAG_CHUNK_SIZE", "700"))
 CHUNK_OVERLAP = int(os.getenv("RAG_CHUNK_OVERLAP", "120"))
+RAG_DEBUG = os.getenv("RAG_DEBUG", "false").lower() == "true"
 
 
 def _category_for_file(file_path: Path) -> str:
@@ -63,6 +64,9 @@ def ingest() -> None:
         raise RuntimeError(f"Knowledge directory not found: {KNOWLEDGE_DIR}")
 
     documents = load_documents()
+    if RAG_DEBUG:
+        print(f"[RAG_INGEST] Knowledge directory: {KNOWLEDGE_DIR}")
+
     if not documents:
         raise RuntimeError("No .md/.txt files found in knowledge directory.")
 
@@ -71,6 +75,12 @@ def ingest() -> None:
         chunk_overlap=CHUNK_OVERLAP,
     )
     chunks = splitter.split_documents(documents)
+
+    if RAG_DEBUG:
+        sources = sorted({doc.metadata.get("source", "unknown") for doc in documents})
+        print(f"[RAG_INGEST] Source files loaded ({len(sources)}):")
+        for src in sources:
+            print(f"  - {src}")
 
     discovered_models = discover_supported_embedding_models()
     candidate_models = RAG_EMBEDDING_MODELS + [
@@ -99,6 +109,8 @@ def ingest() -> None:
         ) from last_error
 
     print(f"Model candidates tried: {candidate_models}")
+    if RAG_DEBUG:
+        print(f"[RAG_INGEST] Chunk size={CHUNK_SIZE}, overlap={CHUNK_OVERLAP}")
     print(f"Ingested {len(documents)} files as {len(chunks)} chunks.")
     print(f"Collection: {RAG_COLLECTION_NAME}")
     print(f"Persist directory: {CHROMA_PERSIST_DIR}")

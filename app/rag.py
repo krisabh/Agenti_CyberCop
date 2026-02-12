@@ -24,6 +24,7 @@ RAG_COLLECTION_NAME = os.getenv("RAG_COLLECTION_NAME", "scam_knowledge")
 RAG_TOP_K = int(os.getenv("RAG_TOP_K", "3"))
 RAG_EMBEDDING_MODEL = os.getenv("RAG_EMBEDDING_MODEL", "models/embedding-001")
 RAG_EMBEDDING_MODELS = parse_embedding_candidates()
+RAG_DEBUG = os.getenv("RAG_DEBUG", "false").lower() == "true"
 
 _VECTORSTORE = None
 
@@ -46,11 +47,15 @@ def _get_vectorstore():
     for model_name in candidate_models:
         try:
             embeddings = GoogleGenerativeAIEmbeddings(model=model_name)
+            # Validate model upfront to avoid runtime NOT_FOUND during retrieval.
+            embeddings.embed_query("health-check")
+
             _VECTORSTORE = Chroma(
                 collection_name=RAG_COLLECTION_NAME,
                 embedding_function=embeddings,
                 persist_directory=CHROMA_PERSIST_DIR,
             )
+            print(f"RAG embedding model selected: {model_name}")
             return _VECTORSTORE
         except Exception as error:  # pragma: no cover
             last_error = error
@@ -85,16 +90,25 @@ def get_rag_context(
     _ = metadata
 
     if not USE_RAG:
+        if RAG_DEBUG:
+            print("[RAG] USE_RAG=false, skipping retrieval")
         return ""
 
     try:
         vectorstore = _get_vectorstore()
         if vectorstore is None:
+            if RAG_DEBUG:
+                print("[RAG] Vectorstore unavailable, skipping retrieval")
             return ""
 
         query = _build_query(history, latest_message)
         docs = vectorstore.similarity_search(query, k=max(1, RAG_TOP_K))
+        if RAG_DEBUG:
+            print(f"[RAG] Query top_k={max(1, RAG_TOP_K)}, hits={len(docs)}")
+
         if not docs:
+            if RAG_DEBUG:
+                print("[RAG] No matching documents found")
             return ""
 
         sections = []
@@ -105,7 +119,14 @@ def get_rag_context(
                 f"[Context {idx} | source={source} | category={category}]\n{doc.page_content.strip()}"
             )
 
-        return "\n\n".join(sections)
+        context = "\n\n".join(sections)
+        if RAG_DEBUG:
+            sources = [doc.metadata.get("source", "unknown") for doc in docs]
+            print(f"[RAG] Sources used: {sources}")
+            print(f"[RAG] Context length: {len(context)} chars")
+        return context
     except Exception as error:
         print("RAG retrieval error:", error)
+        if RAG_DEBUG:
+            print("[RAG] Retrieval failed; returning empty context")
         return ""

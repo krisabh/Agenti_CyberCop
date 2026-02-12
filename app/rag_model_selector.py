@@ -6,6 +6,28 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+def _expand_model_aliases(model_name: str) -> List[str]:
+    """Return common alias forms for a model name (with/without `models/`)."""
+    cleaned = model_name.strip()
+    if not cleaned:
+        return []
+
+    aliases = [cleaned]
+    if cleaned.startswith("models/"):
+        aliases.append(cleaned.replace("models/", "", 1))
+    else:
+        aliases.append(f"models/{cleaned}")
+
+    # Ordered unique
+    seen = set()
+    ordered: List[str] = []
+    for alias in aliases:
+        if alias and alias not in seen:
+            seen.add(alias)
+            ordered.append(alias)
+    return ordered
+
+
 def parse_embedding_candidates() -> List[str]:
     """Return embedding model candidates from env + safe defaults."""
     primary = os.getenv("RAG_EMBEDDING_MODEL", "models/embedding-001").strip()
@@ -19,15 +41,18 @@ def parse_embedding_candidates() -> List[str]:
         primary,
         "models/embedding-001",
         "models/text-embedding-004",
+        "embedding-001",
+        "text-embedding-004",
     ]
 
-    # Ordered unique
+    # Ordered unique, with alias expansion
     seen = set()
     ordered: List[str] = []
     for model_name in configured + defaults:
-        if model_name not in seen:
-            seen.add(model_name)
-            ordered.append(model_name)
+        for alias in _expand_model_aliases(model_name):
+            if alias not in seen:
+                seen.add(alias)
+                ordered.append(alias)
     return ordered
 
 
@@ -46,7 +71,15 @@ def discover_supported_embedding_models() -> List[str]:
             if "embedContent" in methods:
                 name = getattr(model, "name", "")
                 if name:
-                    supported.append(name)
-        return supported
+                    supported.extend(_expand_model_aliases(name))
+
+        # Ordered unique
+        seen = set()
+        ordered: List[str] = []
+        for model_name in supported:
+            if model_name not in seen:
+                seen.add(model_name)
+                ordered.append(model_name)
+        return ordered
     except Exception:
         return []
