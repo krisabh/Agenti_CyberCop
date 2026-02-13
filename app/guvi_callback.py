@@ -45,7 +45,15 @@ def send_final_result_to_guvi(
             f"[GUVI CALLBACK] status={response.status_code}, "
             f"response_body={response.text}"
         )
-        return response.status_code
+        return {
+            "status_code": response.status_code,
+            "response_body": response.text,
+            "payload": payload,
+        }
     except Exception as e:
         print("GUVI callback failed:", str(e))
-        return None
+        return {
+            "status_code": None,
+            "response_body": str(e),
+            "payload": payload,
+        }
