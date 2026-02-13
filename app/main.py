@@ -99,7 +99,7 @@ def _process_honeypot_payload(
             engagement_complete = (
                 scam_detected is True
                 and extracted_intelligence is not None
-                and get_message_count(session_id) >= 4
+                and get_message_count(session_id) >= 17
                 and any(
                     value
                     for key, value in extracted_intelligence.items()
