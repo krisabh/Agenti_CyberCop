@@ -147,6 +147,12 @@ async function sendScammerMessage() {
   const text = el.scammerInput.value.trim();
   if (!text) return;
 
+  const optimisticTimestamp = new Date().toISOString();
+  appendMessage("scammer", text, optimisticTimestamp);
+  appendWaitingBubble();
+  el.timeline.scrollTop = el.timeline.scrollHeight;
+  el.scammerInput.value = "";
+
   const payload = {
     sessionId: state.sessionId,
     message: { sender: "scammer", text, timestamp: Date.now() },
@@ -155,7 +161,7 @@ async function sendScammerMessage() {
   };
 
   const data = await postJSON("/ui/scammer-message", payload);
-  el.scammerInput.value = "";
+
 
   state.scamDetected = !!data.scamDetected;
   state.engagementComplete = !!data.engagementComplete;
@@ -193,6 +199,7 @@ async function sendUserMessage() {
 }
 
 async function confirmTakeover() {
+  showTakeoverModal(false);
   const data = await postJSON("/ui/takeover", { sessionId: state.sessionId });
   state.scamDetected = true;
   state.takeoverAccepted = true;
@@ -204,7 +211,7 @@ async function confirmTakeover() {
   }
   renderStatus();
   applyUiByState();
-  showTakeoverModal(false);
+  //showTakeoverModal(false);
 }
 
 el.newSessionBtn.addEventListener("click", initSession);
