@@ -20,6 +20,10 @@ const el = {
   composerSection: document.getElementById("composerSection"),
   finalCenterPanel: document.getElementById("finalCenterPanel"),
   finalCenterContent: document.getElementById("finalCenterContent"),
+  cybercrimeEmailInput: document.getElementById("cybercrimeEmailInput"),
+  downloadReportBtn: document.getElementById("downloadReportBtn"),
+  shareWhatsappBtn: document.getElementById("shareWhatsappBtn"),
+  emailCybercrimeBtn: document.getElementById("emailCybercrimeBtn"),
   takeoverModal: document.getElementById("takeoverModal"),
   confirmTakeoverBtn: document.getElementById("confirmTakeoverBtn"),
   dismissTakeoverBtn: document.getElementById("dismissTakeoverBtn"),
@@ -104,6 +108,95 @@ function buildFinalReportMarkup(finalResult) {
     </div>
   `;
 }
+function buildReportText(finalResult) {
+  if (!finalResult) return "No engagement report available.";
+  const intel = finalResult.extractedIntelligence || {};
+  const list = (items) => (items && items.length ? items.join(", ") : "None");
+
+  return [
+    "CyberCop Engagement Report",
+    "==========================",
+    `Session ID: ${finalResult.sessionId || state.sessionId}`,
+    `Total Messages Exchanged: ${finalResult.totalMessagesExchanged || 0}`,
+    `Scam Detection: ${finalResult.scamDetected ? "Confirmed" : "Not Confirmed"}`,
+    `Agent Notes: ${finalResult.agentNotes || "N/A"}`,
+    "",
+    "Extracted Intelligence",
+    "----------------------",
+    `Bank Accounts: ${list(intel.bankAccounts)}`,
+    `UPI IDs: ${list(intel.upiIds)}`,
+    `Phishing Links: ${list(intel.phishingLinks)}`,
+    `Phone Numbers: ${list(intel.phoneNumbers)}`,
+    `Email Addresses: ${list(intel.emailAddresses)}`,
+    `IFSC Codes: ${list(intel.ifscCodes)}`,
+    `PAN Numbers: ${list(intel.panNumbers)}`,
+    `Suspicious Keywords: ${list(intel.suspiciousKeywords)}`,
+  ].join("\n");
+}
+
+function getCybercrimeEmailId() {
+  return (el.cybercrimeEmailInput.value || "").trim();
+}
+
+function downloadReport() {
+  if (!state.finalResult) {
+    alert("Report will be available once engagement is completed.");
+    return;
+  }
+
+  const content = buildReportText(state.finalResult);
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${state.sessionId || "engagement"}-report.txt`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function shareToWhatsApp() {
+  if (!state.finalResult) {
+    alert("Report will be available once engagement is completed.");
+    return;
+  }
+
+  const report = buildReportText(state.finalResult);
+  const message = encodeURIComponent(report.slice(0, 1800));
+  window.open(`https://wa.me/?text=${message}`, "_blank");
+}
+
+function emailCybercrime() {
+  if (!state.finalResult) {
+    alert("Report will be available once engagement is completed.");
+    return;
+  }
+
+  const email = getCybercrimeEmailId();
+  if (!email) {
+    alert("Please enter a cybercrime email ID.");
+    return;
+  }
+
+  const subject = `CyberCop Engagement Report - ${state.sessionId || "Session"}`;
+  const fullReport = buildReportText(state.finalResult);
+  const compactBody = fullReport.length > 1500
+    ? `${fullReport.slice(0, 1500)}\n\n[Report truncated. Use Download Report for full content.]`
+    : fullReport;
+
+  // Gmail web compose URL (Option 3)
+  const gmailUrl =
+    `https://mail.google.com/mail/?view=cm&fs=1` +
+    `&to=${encodeURIComponent(email)}` +
+    `&su=${encodeURIComponent(subject)}` +
+    `&body=${encodeURIComponent(compactBody)}`;
+
+  // Open Gmail compose in new tab
+  window.open(gmailUrl, "_blank");
+}
+
+
 
 function renderIntel() {
   if (!state.finalResult) {
@@ -219,5 +312,7 @@ el.sendScammerBtn.addEventListener("click", () => sendScammerMessage().catch((e)
 el.sendUserBtn.addEventListener("click", () => sendUserMessage().catch((e) => alert(e.message)));
 el.confirmTakeoverBtn.addEventListener("click", () => confirmTakeover().catch((e) => alert(e.message)));
 el.dismissTakeoverBtn.addEventListener("click", () => showTakeoverModal(false));
-
+el.downloadReportBtn.addEventListener("click", downloadReport);
+el.shareWhatsappBtn.addEventListener("click", shareToWhatsApp);
+el.emailCybercrimeBtn.addEventListener("click", emailCybercrime);
 initSession();

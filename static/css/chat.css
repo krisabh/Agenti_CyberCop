@@ -136,6 +136,16 @@ button.secondary { background: #4b5563; }
 }
 .final-card h2 { margin: 0 0 6px; font-size: 28px; }
 .final-card .subtitle { margin: 0 0 18px; color: #cbd5e1; }
+.report-actions {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.report-actions input,
+.report-actions button {
+  margin: 0;
+}
 .final-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .kv {
   background: rgba(15,23,42,.7);
@@ -178,5 +188,6 @@ button.secondary { background: #4b5563; }
   .app-shell { grid-template-columns: 1fr; }
   .sidebar { border-right: 0; border-bottom: 1px solid #273449; }
   .final-grid { grid-template-columns: 1fr; }
+  .report-actions { grid-template-columns: 1fr; }
   .row { grid-template-columns: 1fr; }
 }
