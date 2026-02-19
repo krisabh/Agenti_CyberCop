@@ -21,8 +21,8 @@ API_KEY = os.getenv("API_KEY")
 app = FastAPI()
 
 # Latency budgets (seconds)
-DETECT_TIMEOUT = float(os.getenv("DETECT_TIMEOUT_SECONDS", "6"))
-REPLY_TIMEOUT = float(os.getenv("REPLY_TIMEOUT_SECONDS", "8"))
+DETECT_TIMEOUT = float(os.getenv("DETECT_TIMEOUT_SECONDS", "28"))
+REPLY_TIMEOUT = float(os.getenv("REPLY_TIMEOUT_SECONDS", "28"))
 
 # Reuse worker pool to avoid thread startup overhead each request
 _POOL = ThreadPoolExecutor(max_workers=8)
