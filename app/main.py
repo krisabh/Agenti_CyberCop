@@ -5,14 +5,13 @@ from app.agent_notes import generate_agent_notes
 import os
 from typing import Any, Optional, Tuple, Dict
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
-import threading
 
 from app.memory import add_message, get_messages, get_message_count
 from app.memory import was_scam_detected, mark_scam_detected
 from app.detector import detect_scam
 from app.agent import generate_agent_reply
 from app.extractor import extract_intelligence
-from app.guvi_callback import send_final_result_to_guvi
+from app.guvi_callback import send_final_result_to_guvi_async
 from app.memory import is_session_finalized, mark_session_finalized
 
 load_dotenv()
@@ -122,22 +121,6 @@ def _generate_reply_fast(history: list) -> str:
         return "Please share your official helpline number and where to verify this."
 
 
-def _send_guvi_callback_async(session_id: str, total_messages: int, extracted_intelligence: dict, agent_notes: str):
-    def _runner():
-        try:
-            send_final_result_to_guvi(
-                session_id=session_id,
-                scam_detected=True,
-                total_messages=total_messages,
-                extracted_intelligence=extracted_intelligence,
-                agent_notes=agent_notes
-            )
-        except Exception:
-            pass
-
-    threading.Thread(target=_runner, daemon=True).start()
-
-
 @app.get("/")
 def health_check():
     return {"status": "ok"}
@@ -206,8 +189,9 @@ def honeypot(payload: Optional[Any] = Body(None), x_api_key: str = Header(None))
             total_messages = get_message_count(session_id)
 
             # async callback -> do not block API response
-            _send_guvi_callback_async(
+            send_final_result_to_guvi_async(
                 session_id=session_id,
+                scam_detected=True,
                 total_messages=total_messages,
                 extracted_intelligence=extracted_intelligence,
                 agent_notes=agent_notes
