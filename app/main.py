@@ -4,13 +4,13 @@ from dotenv import load_dotenv
 from app.agent_notes import generate_agent_notes
 import os
 from typing import Any, Optional, Tuple, Dict
+
 from app.memory import add_message, get_messages, get_message_count
 from app.memory import was_scam_detected, mark_scam_detected
 from app.detector import detect_scam
 from app.agent import generate_agent_reply
 from app.extractor import extract_intelligence
 from app.guvi_callback import send_final_result_to_guvi
-from app.rag import get_rag_context
 from app.memory import is_session_finalized, mark_session_finalized
 
 load_dotenv()
@@ -19,11 +19,9 @@ API_KEY = os.getenv("API_KEY")
 app = FastAPI()
 
 
-def _extract_from_single_object(obj: Dict[str, Any]) -> Tuple[Optional[str], Optional[str], dict]:
+def _extract_single_payload(obj: Dict[str, Any]) -> Tuple[Optional[str], Optional[str], dict]:
     """
-    Normalize one request object into (session_id, message, metadata).
-
-    Supported shapes:
+    Supports:
     1) Existing:
        {
          "sessionId": "...",
@@ -31,16 +29,12 @@ def _extract_from_single_object(obj: Dict[str, Any]) -> Tuple[Optional[str], Opt
          "metadata": {...}
        }
 
-    2) Panel scenario:
+    2) New panel:
        {
          "scenarioId": "...",
          "initialMessage": "...",
          "metadata": {...}
        }
-
-    3) Tolerant variants:
-       - "message" as plain string
-       - optional metadata
     """
     metadata = obj.get("metadata", {})
     if not isinstance(metadata, dict):
@@ -49,21 +43,19 @@ def _extract_from_single_object(obj: Dict[str, Any]) -> Tuple[Optional[str], Opt
     # Existing contract
     if "sessionId" in obj:
         session_id = obj.get("sessionId")
-        msg = obj.get("message")
-
-        if isinstance(msg, dict):
-            message = msg.get("text")
-        elif isinstance(msg, str):
-            message = msg
+        message_obj = obj.get("message")
+        if isinstance(message_obj, dict):
+            message = message_obj.get("text")
+        elif isinstance(message_obj, str):
+            message = message_obj
         else:
             message = None
-
         return session_id, message, metadata
 
-    # Panel contract
+    # New panel contract
     if "scenarioId" in obj:
         session_id = obj.get("scenarioId")
-        message = obj.get("initialMessage") or obj.get("message")
+        message = obj.get("initialMessage")
         if isinstance(message, dict):
             message = message.get("text")
         return session_id, message, metadata
@@ -73,24 +65,22 @@ def _extract_from_single_object(obj: Dict[str, Any]) -> Tuple[Optional[str], Opt
 
 def _normalize_request_payload(payload: Any) -> Tuple[Optional[str], Optional[str], dict]:
     """
-    Returns first valid (session_id, message, metadata) from payload.
-    Handles dict or list-of-dicts robustly.
+    Handles dict OR list payload.
+    For list payloads, picks first valid item.
     """
     if payload is None:
         return None, None, {}
 
-    # If panel sends array of scenarios, pick first valid scenario
     if isinstance(payload, list):
         for item in payload:
             if isinstance(item, dict):
-                session_id, message, metadata = _extract_from_single_object(item)
+                session_id, message, metadata = _extract_single_payload(item)
                 if session_id and message:
                     return session_id, message, metadata
         return None, None, {}
 
-    # Single object
     if isinstance(payload, dict):
-        return _extract_from_single_object(payload)
+        return _extract_single_payload(payload)
 
     return None, None, {}
 
@@ -116,14 +106,14 @@ def honeypot(payload: Optional[Any] = Body(None), x_api_key: str = Header(None))
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="Invalid API key")
 
-    # GUVI endpoint tester case (no body)
+    # endpoint tester / empty body
     if payload is None or payload == {} or payload == []:
         return {
             "status": "success",
             "message": "Honeypot endpoint reachable"
         }
 
-    session_id, message, metadata = _normalize_request_payload(payload)
+    session_id, message, _metadata = _normalize_request_payload(payload)
 
     if not session_id or not message:
         return {
@@ -132,7 +122,6 @@ def honeypot(payload: Optional[Any] = Body(None), x_api_key: str = Header(None))
         }
 
     if is_session_finalized(session_id):
-        # Conversation lifecycle is over
         return {
             "status": "success",
             "reply": "I am working on it. ",
@@ -155,19 +144,14 @@ def honeypot(payload: Optional[Any] = Body(None), x_api_key: str = Header(None))
     if scam_detected:
         history = get_messages(session_id)
 
-        # 3) Generate agent reply (RAG optional; unchanged behavior)
-        rag_context = get_rag_context(
-            history=history,
-            latest_message=message,
-            metadata=metadata,
-        )
-        agent_reply = generate_agent_reply(history, rag_context=rag_context)
+        # 3) Generate agent reply (NO RAG)
+        agent_reply = generate_agent_reply(history)
         add_message(session_id, "agent", agent_reply)
 
         # 4) Extract intelligence
         extracted_intelligence = extract_intelligence(history)
 
-        # Final callback condition (unchanged)
+        # final callback condition (same logic)
         engagement_complete = (
             scam_detected is True
             and extracted_intelligence is not None
@@ -183,7 +167,6 @@ def honeypot(payload: Optional[Any] = Body(None), x_api_key: str = Header(None))
             agent_notes = generate_agent_notes(history)
             total_messages = get_message_count(session_id)
 
-            # Mandatory GUVI callback
             send_final_result_to_guvi(
                 session_id=session_id,
                 scam_detected=True,
@@ -192,14 +175,13 @@ def honeypot(payload: Optional[Any] = Body(None), x_api_key: str = Header(None))
                 agent_notes=agent_notes
             )
 
-            # Mark session as finalized
             mark_session_finalized(session_id)
             return {
                 "status": "success",
                 "reply": "I am working on it. Please wait...!",
             }
 
-    # 5) Default (ongoing conversation response)
+    # ongoing conversation response
     return {
         "status": "success",
         "reply": agent_reply or "",
