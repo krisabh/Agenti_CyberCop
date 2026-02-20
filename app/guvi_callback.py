@@ -35,7 +35,7 @@ def send_final_result_to_guvi(
         "agentNotes": agent_notes,
     }
     print("========== GUVI FINAL CALLBACK PAYLOAD ==========")
-    # print(payload)
+    print(payload)
     # print(f"[GUVI CALLBACK] agentNotes={agent_notes}")
     print("=================================================")
     try:

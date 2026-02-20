@@ -23,7 +23,7 @@ load_dotenv()
 API_KEY = os.getenv("API_KEY")
 app = FastAPI()
 MIN_INTEL_SCORE = int(os.getenv("MIN_INTEL_SCORE", "8"))
-FALLBACK_MIN_TURNS = int(os.getenv("FALLBACK_MIN_TURNS", "4"))
+FALLBACK_MIN_TURNS = int(os.getenv("FALLBACK_MIN_TURNS", "17"))
 
 
 # Latency budgets (seconds)
