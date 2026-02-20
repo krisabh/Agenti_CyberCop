@@ -9,6 +9,7 @@ def send_final_result_to_guvi(
     session_id: str,
     scam_detected: bool,
     total_messages: int,
+    engagement_duration_seconds: int,
     extracted_intelligence: dict,
     agent_notes: str
 ):
@@ -20,6 +21,7 @@ def send_final_result_to_guvi(
         "sessionId": session_id,
         "scamDetected": scam_detected,
         "totalMessagesExchanged": total_messages,
+        "engagementDurationSeconds": engagement_duration_seconds,
         "extractedIntelligence": {
             "bankAccounts": extracted_intelligence.get("bankAccounts", []),
             "upiIds": extracted_intelligence.get("upiIds", []),
@@ -33,7 +35,8 @@ def send_final_result_to_guvi(
         "agentNotes": agent_notes,
     }
     print("========== GUVI FINAL CALLBACK PAYLOAD ==========")
-    print(payload)
+    # print(payload)
+    # print(f"[GUVI CALLBACK] agentNotes={agent_notes}")
     print("=================================================")
     try:
         response = _SESSION.post(
@@ -42,7 +45,9 @@ def send_final_result_to_guvi(
             timeout=5,
         )
         print(f"[GUVI CALLBACK] status={response.status_code}")
-        print(f"[GUVI CALLBACK] body={response.text}")
+        print(agent_notes)
+        # print(f"[GUVI CALLBACK] body={response.text}")
+        # print(f"[GUVI CALLBACK] session={session_id} status={response.status_code}")
         return response.status_code
     except Exception as error:
         print("GUVI callback failed:", str(error))
@@ -53,6 +58,7 @@ def send_final_result_to_guvi_async(
     session_id: str,
     scam_detected: bool,
     total_messages: int,
+    engagement_duration_seconds: int,
     extracted_intelligence: dict,
     agent_notes: str
 ):
@@ -65,6 +71,7 @@ def send_final_result_to_guvi_async(
                 session_id=session_id,
                 scam_detected=scam_detected,
                 total_messages=total_messages,
+                engagement_duration_seconds=engagement_duration_seconds,
                 extracted_intelligence=extracted_intelligence,
                 agent_notes=agent_notes,
             )
