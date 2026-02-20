@@ -26,7 +26,7 @@ MIN_INTEL_SCORE = int(os.getenv("MIN_INTEL_SCORE", "14"))
 FALLBACK_MIN_TURNS = int(os.getenv("FALLBACK_MIN_TURNS", "17"))
 
 
-# Latency budgets (seconds)
+# Latency  budgets (seconds)
 DETECT_TIMEOUT = float(os.getenv("DETECT_TIMEOUT_SECONDS", "28"))
 REPLY_TIMEOUT = float(os.getenv("REPLY_TIMEOUT_SECONDS", "28"))
 
