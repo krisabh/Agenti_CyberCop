@@ -35,7 +35,7 @@ def send_final_result_to_guvi(
         "agentNotes": agent_notes,
     }
     print("========== GUVI FINAL CALLBACK PAYLOAD ==========")
-    print(payload)
+
     # print(f"[GUVI CALLBACK] agentNotes={agent_notes}")
     print("=================================================")
     try:
@@ -44,8 +44,8 @@ def send_final_result_to_guvi(
             json=payload,
             timeout=5,
         )
-        print(f"[GUVI CALLBACK] status={response.status_code}")
-        print(agent_notes)
+        print(f"[GUVI CALLBACK] status check={response.status_code}")
+
         # print(f"[GUVI CALLBACK] body={response.text}")
         # print(f"[GUVI CALLBACK] session={session_id} status={response.status_code}")
         return response.status_code
