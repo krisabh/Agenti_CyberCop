@@ -37,9 +37,10 @@ def send_final_result_to_guvi(
         response = _SESSION.post(
             GUVI_CALLBACK_URL,
             json=payload,
-            timeout=5,  # keep exactly as doc
+            timeout=5,
         )
         print(f"[GUVI CALLBACK] status={response.status_code}")
+        print(f"[GUVI CALLBACK] body={response.text}")
         return response.status_code
     except Exception as error:
         print("GUVI callback failed:", str(error))

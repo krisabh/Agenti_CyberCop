@@ -18,6 +18,9 @@ load_dotenv()
 
 API_KEY = os.getenv("API_KEY")
 app = FastAPI()
+MIN_INTEL_SCORE = int(os.getenv("MIN_INTEL_SCORE", "8"))
+FALLBACK_MIN_TURNS = int(os.getenv("FALLBACK_MIN_TURNS", "17"))
+
 
 # Latency budgets (seconds)
 DETECT_TIMEOUT = float(os.getenv("DETECT_TIMEOUT_SECONDS", "28"))
@@ -107,6 +110,7 @@ def _detect_scam_fast(message: str) -> bool:
         return False
 
 
+
 def _generate_reply_fast(history: list) -> str:
     future = _POOL.submit(generate_agent_reply, history)
     try:
@@ -120,6 +124,23 @@ def _generate_reply_fast(history: list) -> str:
     except Exception:
         return "Please share your official helpline number and where to verify this."
 
+def _calculate_intel_score(extracted_intelligence: dict) -> int:
+    """
+    Weighted score for extracted intelligence.
+    suspiciousKeywords intentionally ignored.
+    """
+    if not extracted_intelligence:
+        return 0
+
+    score = 0
+    score += 3 * len(extracted_intelligence.get("bankAccounts", []))
+    score += 3 * len(extracted_intelligence.get("upiIds", []))
+    score += 3 * len(extracted_intelligence.get("phishingLinks", []))
+    score += 2 * len(extracted_intelligence.get("phoneNumbers", []))
+    score += 1 * len(extracted_intelligence.get("emailAddresses", []))
+    score += 1 * len(extracted_intelligence.get("ifscCodes", []))
+    score += 1 * len(extracted_intelligence.get("panNumbers", []))
+    return score
 
 @app.get("/")
 def health_check():
@@ -173,15 +194,34 @@ def honeypot(payload: Optional[Any] = Body(None), x_api_key: str = Header(None))
         # 4) Extract intelligence
         extracted_intelligence = extract_intelligence(history)
 
+        # engagement_complete = (
+        #     scam_detected is True
+        #     and extracted_intelligence is not None
+        #     and get_message_count(session_id) >= 17
+        #     and any(
+        #         value
+        #         for key, value in extracted_intelligence.items()
+        #         if key != "suspiciousKeywords"
+        #     )
+        # )
+
+        intel_score = _calculate_intel_score(extracted_intelligence)
+        turns = get_message_count(session_id)
+
+        has_non_keyword_evidence = any(
+            value
+            for key, value in extracted_intelligence.items()
+            if key != "suspiciousKeywords"
+        )
+
         engagement_complete = (
-            scam_detected is True
-            and extracted_intelligence is not None
-            and get_message_count(session_id) >= 5
-            and any(
-                value
-                for key, value in extracted_intelligence.items()
-                if key != "suspiciousKeywords"
-            )
+                scam_detected is True
+                and extracted_intelligence is not None
+                and has_non_keyword_evidence
+                and (
+                        intel_score >= MIN_INTEL_SCORE
+                        or turns >= FALLBACK_MIN_TURNS
+                )
         )
 
         if engagement_complete and not is_session_finalized(session_id):
