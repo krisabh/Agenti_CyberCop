@@ -1,3 +1,6 @@
+from datetime import datetime
+# import datetime
+
 from fastapi import FastAPI, Header, HTTPException, Body
 from dotenv import load_dotenv
 
@@ -11,6 +14,7 @@ from app.memory import was_scam_detected, mark_scam_detected
 from app.detector import detect_scam
 from app.agent import generate_agent_reply
 from app.extractor import extract_intelligence
+
 from app.guvi_callback import send_final_result_to_guvi_async
 from app.memory import is_session_finalized, mark_session_finalized
 
@@ -18,11 +22,11 @@ load_dotenv()
 
 API_KEY = os.getenv("API_KEY")
 app = FastAPI()
-MIN_INTEL_SCORE = int(os.getenv("MIN_INTEL_SCORE", "8"))
-FALLBACK_MIN_TURNS = int(os.getenv("FALLBACK_MIN_TURNS", "17"))
+MIN_INTEL_SCORE = int(os.getenv("MIN_INTEL_SCORE", "27"))
+FALLBACK_MIN_TURNS = int(os.getenv("FALLBACK_MIN_TURNS", "19"))
 
 
-# Latency budgets (seconds)
+# Latency  budgets (seconds)
 DETECT_TIMEOUT = float(os.getenv("DETECT_TIMEOUT_SECONDS", "28"))
 REPLY_TIMEOUT = float(os.getenv("REPLY_TIMEOUT_SECONDS", "28"))
 
@@ -124,6 +128,17 @@ def _generate_reply_fast(history: list) -> str:
     except Exception:
         return "Please share your official helpline number and where to verify this."
 
+def _generate_notes_fast(history: list) -> str:
+    future = _POOL.submit(generate_agent_notes, history)
+    try:
+        out = future.result(timeout=4)  # keep short
+        if isinstance(out, str) and out.strip():
+            return out.strip()
+        return "Scammer used social-engineering and payment redirection tactics."
+    except Exception:
+        return "Scammer used social-engineering and payment redirection tactics."
+
+
 def _calculate_intel_score(extracted_intelligence: dict) -> int:
     """
     Weighted score for extracted intelligence.
@@ -141,6 +156,29 @@ def _calculate_intel_score(extracted_intelligence: dict) -> int:
     score += 1 * len(extracted_intelligence.get("ifscCodes", []))
     score += 1 * len(extracted_intelligence.get("panNumbers", []))
     return score
+
+def _calculate_engagement_duration_seconds(history: list) -> int:
+    """
+    Calculates duration between earliest and latest message timestamp in seconds.
+    Falls back to 0 for missing/invalid timestamps.
+    """
+    if not history or len(history) < 2:
+        return 0
+
+    parsed = []
+    for msg in history:
+        ts = msg.get("timestamp")
+        if not isinstance(ts, str) or not ts:
+            continue
+        try:
+            parsed.append(datetime.fromisoformat(ts.replace("Z", "+00:00")))
+        except ValueError:
+            continue
+
+    if len(parsed) < 2:
+        return 0
+
+    return max(0, int((max(parsed) - min(parsed)).total_seconds()))
 
 @app.get("/")
 def health_check():
@@ -225,14 +263,16 @@ def honeypot(payload: Optional[Any] = Body(None), x_api_key: str = Header(None))
         )
 
         if engagement_complete and not is_session_finalized(session_id):
-            agent_notes = generate_agent_notes(history)
+            # agent_notes = generate_agent_notes(history)
+            agent_notes = _generate_notes_fast(history)
             total_messages = get_message_count(session_id)
-
+            engagement_duration_seconds = _calculate_engagement_duration_seconds(history)
             # async callback -> do not block API response
             send_final_result_to_guvi_async(
                 session_id=session_id,
                 scam_detected=True,
                 total_messages=total_messages,
+                engagement_duration_seconds=engagement_duration_seconds,
                 extracted_intelligence=extracted_intelligence,
                 agent_notes=agent_notes
             )
